@@ -1,4 +1,5 @@
 <?php
+// UPLOAD PAGE - STEP 1
 // Displays "Previous Records" and "New Record Add" buttons
 //  User clicks "New Record Add" → goes to upload_form.php
 
@@ -26,6 +27,11 @@ include 'templates/include/sidebar.php';
       <!-- New Record Add Button -->
       <a href="upload_form.php" class="btn btn-primary btn-lg mx-2">
         <i class="fas fa-plus-circle"></i> New Record Add
+      </a>
+
+      <!-- City-wise Data Button -->
+      <a href="city_wise.php" class="btn btn-success btn-lg mx-2">
+        <i class="fas fa-city"></i> City-wise Data
       </a>
 
     </div>
