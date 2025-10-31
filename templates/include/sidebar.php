@@ -21,7 +21,6 @@
           <i class="fas fa-upload"></i>
           <span>Upload CSV</span></a>
   </li>
-
 </ul>
 <!-- End of Sidebar -->
 
@@ -31,5 +30,5 @@
   <!-- Main Content -->
   <div id="content">
 
-    <!-- (optional) Topbar space -->
+    <!-- Topbar space -->
     <nav class="navbar navbar-expand navbar-light bg-white topbar mb-4 static-top shadow"></nav>
