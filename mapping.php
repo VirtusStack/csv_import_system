@@ -111,7 +111,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 <td><strong><?= ucfirst($field) ?></strong></td>
                 <td>
                   <?php if ($field === 'date'): ?>
-                    <!-- ✅ Date field: select header OR manually choose date -->
+                    <!--  Date field: select header OR manually choose date -->
                     <div class="input-group">
                       <select name="mapping[<?= $field ?>]" class="form-control">
                         <option value="">-- Select Header --</option>
@@ -137,7 +137,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             </tbody>
           </table>
         </div>
-
+    
         <!-- Submit Button -->
         <div class="text-center">
           <button type="submit" name="import" class="btn btn-success btn-lg">
