@@ -1,5 +1,5 @@
 <?php
-//  IMPORT CSV TO MYSQL (uploads table)
+// STEP 4 - IMPORT CSV TO MYSQL (uploads table)
 // 1. Receives mapped headers + CSV path
 // 2. Reads file, applies mapping
 // 3. Inserts into `uploads` table
@@ -19,6 +19,7 @@ if (!isset($_POST['import']) || !isset($_POST['csv_path'])) {
 
 $csvPath = $_POST['csv_path'];
 $mapping = $_POST['mapping'] ?? [];
+$manualDate = $_POST['manual_date'] ?? '';  
 
 if (!file_exists($csvPath)) {
     echo "<div class='container-fluid'><div class='alert alert-danger mt-3'>File not found!</div></div>";
@@ -46,6 +47,14 @@ while (($row = fgetcsv($file)) !== false) {
         $data[$field] = ($index !== false && isset($row[$index])) ? trim($row[$index]) : null;
     }
 
+    // ✅ If CSV date not provided, use manual date if available
+    $finalDate = null;
+    if (!empty($data['date'])) {
+        $finalDate = date('Y-m-d', strtotime($data['date']));
+    } elseif (!empty($manualDate)) {
+        $finalDate = $manualDate;
+    }
+
     // Insert into DB
     try {
         $stmt->execute([
@@ -53,7 +62,7 @@ while (($row = fgetcsv($file)) !== false) {
             $data['contact'],
             $data['city'],
             $data['state'],
-            !empty($data['date']) ? date('Y-m-d', strtotime($data['date'])) : null,
+            $finalDate,
             basename($csvPath)
         ]);
         $inserted++;
@@ -66,7 +75,7 @@ while (($row = fgetcsv($file)) !== false) {
 
 fclose($file);
 
-//  Move file to processed folder
+// Move file to processed folder
 $newPath = PROCESSED_PATH . "/" . basename($csvPath);
 rename($csvPath, $newPath);
 
@@ -90,3 +99,4 @@ rename($csvPath, $newPath);
 </div>
 
 <?php include 'templates/include/footer.php'; ?>
+

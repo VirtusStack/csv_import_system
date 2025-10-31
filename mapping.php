@@ -1,4 +1,5 @@
 <?php
+// STEP 3 - CSV HEADER MAPPING PAGE
 // 1. Checks password
 // 2. Validates and uploads CSV file
 // 3. Reads first row to detect headers
@@ -42,27 +43,26 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         exit;
     }
 
-// Read first line for headers
-$file = fopen($targetPath, 'r');
-$headers = fgetcsv($file);
+    // Read first line for headers
+    $file = fopen($targetPath, 'r');
+    $headers = fgetcsv($file);
 
-//  Detect if header line looks invalid or has too few columns
-if (!$headers || count($headers) < 2) {
-    rewind($file);
-    $firstRow = fgetcsv($file);
-    $colCount = count($firstRow);
-    $headers = [];
+    // Detect if header line looks invalid or has too few columns
+    if (!$headers || count($headers) < 2) {
+        rewind($file);
+        $firstRow = fgetcsv($file);
+        $colCount = count($firstRow);
+        $headers = [];
 
-    // Generate fake headers: Column 1, Column 2, ...
-    for ($i = 1; $i <= $colCount; $i++) {
-        $headers[] = "Column $i";
+        // Generate fake headers: Column 1, Column 2, ...
+        for ($i = 1; $i <= $colCount; $i++) {
+            $headers[] = "Column $i";
+        }
+
+        rewind($file);
     }
 
-    // Move back to start
-    rewind($file);
-}
-
-fclose($file);
+    fclose($file);
 } else {
     // If accessed directly without form submission
     header("Location: upload_form.php");
@@ -101,31 +101,39 @@ fclose($file);
             </thead>
             <tbody>
               <?php
+              // Create dropdown mapping rows
+              $systemFields = ['name', 'contact', 'city', 'state', 'date'];
 
-// Create dropdown mapping rows
-
-$systemFields = ['name', 'contact', 'city', 'state', 'date'];
-
-foreach ($systemFields as $field):
-    // Only 'name' and 'contact' are mandatory
-    $isRequired = in_array($field, ['name', 'contact']) ? 'required' : '';
-?>
-  <tr>
-    <td><strong><?= ucfirst($field) ?></strong></td>
-    <td>
-      <select name="mapping[<?= $field ?>]" class="form-control" <?= $isRequired ?>>
-        <option value="">-- Select Header --</option>
-        <?php foreach ($headers as $h): ?>
-          <option value="<?= htmlspecialchars($h) ?>"><?= htmlspecialchars($h) ?></option>
-        <?php endforeach; ?>
-      </select>
-      <?php if ($field === 'date'): ?>
-        <small class="text-muted">(Optional — skip if CSV has no date)</small>
-      <?php endif; ?>
-    </td>
-  </tr>
-<?php endforeach; ?>
-
+              foreach ($systemFields as $field):
+                  $isRequired = in_array($field, ['name', 'contact']) ? 'required' : '';
+              ?>
+              <tr>
+                <td><strong><?= ucfirst($field) ?></strong></td>
+                <td>
+                  <?php if ($field === 'date'): ?>
+                    <!-- ✅ Date field: select header OR manually choose date -->
+                    <div class="input-group">
+                      <select name="mapping[<?= $field ?>]" class="form-control">
+                        <option value="">-- Select Header --</option>
+                        <?php foreach ($headers as $h): ?>
+                          <option value="<?= htmlspecialchars($h) ?>"><?= htmlspecialchars($h) ?></option>
+                        <?php endforeach; ?>
+                      </select>
+                      <span class="input-group-text">or</span>
+                      <input type="date" name="manual_date" class="form-control" placeholder="Select date manually">
+                    </div>
+                    <small class="text-muted">(Optional — select CSV column or enter date manually)</small>
+                  <?php else: ?>
+                    <select name="mapping[<?= $field ?>]" class="form-control" <?= $isRequired ?>>
+                      <option value="">-- Select Header --</option>
+                      <?php foreach ($headers as $h): ?>
+                        <option value="<?= htmlspecialchars($h) ?>"><?= htmlspecialchars($h) ?></option>
+                      <?php endforeach; ?>
+                    </select>
+                  <?php endif; ?>
+                </td>
+              </tr>
+              <?php endforeach; ?>
             </tbody>
           </table>
         </div>
