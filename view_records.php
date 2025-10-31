@@ -78,12 +78,11 @@ $total_records = 0;
 if ($password_verified && isset($_POST['selected_city']) && !isset($_POST['download_csv'])) {
     $selected_city = $_POST['selected_city'];
 
-    $stmt = $pdo->prepare("SELECT * FROM uploads WHERE city = ? ORDER BY uploaded_at DESC");
+    // Fetch only first 10 entries for preview
+    $stmt = $pdo->prepare("SELECT * FROM uploads WHERE city = ? ORDER BY uploaded_at ASC LIMIT 10");
     $stmt->execute([$selected_city]);
     $records = $stmt->fetchAll(PDO::FETCH_ASSOC);
-    $total_records = count($records);
 }
-
 ?>
 
 <!-- MAIN PAGE CONTENT -->
