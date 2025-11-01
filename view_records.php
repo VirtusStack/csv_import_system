@@ -99,24 +99,23 @@ if ($password_verified && !empty($selected_city) && !isset($_POST['download_csv'
     $params = [$selected_city];
 
     if (!empty($selected_month)) {
-        $query .= " AND MONTH(date) = ?";
+        $countQuery .= " AND MONTH(date) = ?";
         $params[] = $selected_month;
     }
 
     if (!empty($selected_year)) {
-        $query .= " AND YEAR(date) = ?";
+        $countQuery .= " AND YEAR(date) = ?";
         $params[] = $selected_year;
     }
 
+    // Count total
     $countStmt = $pdo->prepare($countQuery);
     $countStmt->execute($params);
     $total_records = $countStmt->fetchColumn();
 
-   // Fetch only first 10 entries for preview
-    $query = $countQuery . " LIMIT 10";
-    $stmt = $pdo->prepare(
-        str_replace("COUNT(*)", "name, contact, city, state, date", $query)
-    );
+    //  Fetch only first 10 entries for preview
+    $query = str_replace("COUNT(*)", "name, contact, city, state, date", $countQuery) . " LIMIT 10";
+    $stmt = $pdo->prepare($query);
     $stmt->execute($params);
     $records = $stmt->fetchAll(PDO::FETCH_ASSOC);
 }

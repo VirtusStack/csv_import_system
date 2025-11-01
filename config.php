@@ -30,11 +30,9 @@ define("BASE_URL", "http://localhost/csv_import_system");
 
 // Upload folders (absolute paths)
 define("UPLOAD_PATH", __DIR__ . "/uploads");
-define("PROCESSED_PATH", __DIR__ . "/uploads/processed");
 
 // Create folders if missing
 if (!is_dir(UPLOAD_PATH)) mkdir(UPLOAD_PATH, 0777, true);
-if (!is_dir(PROCESSED_PATH)) mkdir(PROCESSED_PATH, 0777, true);
 
 // System Configuration
 

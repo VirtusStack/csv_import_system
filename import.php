@@ -47,7 +47,7 @@ while (($row = fgetcsv($file)) !== false) {
         $data[$field] = ($index !== false && isset($row[$index])) ? trim($row[$index]) : null;
     }
 
-    // ✅ If CSV date not provided, use manual date if available
+    //  If CSV date not provided, use manual date if available
     $finalDate = null;
     if (!empty($data['date'])) {
         $finalDate = date('Y-m-d', strtotime($data['date']));
@@ -75,8 +75,8 @@ while (($row = fgetcsv($file)) !== false) {
 
 fclose($file);
 
-// Move file to processed folder
-$newPath = PROCESSED_PATH . "/" . basename($csvPath);
+// Move file back to uploads folder 
+$newPath = UPLOAD_PATH . "/" . basename($csvPath);
 rename($csvPath, $newPath);
 
 // Show success message
