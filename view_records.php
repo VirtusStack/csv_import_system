@@ -1,28 +1,43 @@
 <?php
 //Features:
 // Password-protected access (same as upload password)
-//City dropdown to filter data
-// Shows total records count for selected city
-// Download button to export selected city data to CSV
+// City dropdown to filter data
+// Month & Year specify options
+// Shows total records count for selected city/month/year
+// Download button to export selected data to CSV
 // Back + Lock Again (logout) buttons
 
 session_start();
 require_once 'config.php';
-
 // Handle CSV download FIRST
-if (isset($_SESSION['records_verified']) && $_SESSION['records_verified'] === true && 
+if (isset($_SESSION['records_verified']) && $_SESSION['records_verified'] === true &&
     isset($_POST['download_csv']) && !empty($_POST['selected_city'])) {
 
     $city = $_POST['selected_city'];
+    $month = $_POST['selected_month'] ?? '';
+    $year = $_POST['selected_year'] ?? '';
 
-    // Prepare CSV data
-    $stmt = $pdo->prepare("SELECT name, contact, city, state FROM uploads WHERE city = ?");
-    $stmt->execute([$city]);
+    // Build query dynamically
+    $query = "SELECT name, contact, city, state, date FROM uploads WHERE city = ?";
+    $params = [$city];
+
+    if (!empty($month)) {
+        $query .= " AND MONTH(date) = ?";
+        $params[] = $month;
+    }
+
+    if (!empty($year)) {
+        $query .= " AND YEAR(date) = ?";
+        $params[] = $year;
+    }
+
+    $stmt = $pdo->prepare($query);
+    $stmt->execute($params);
     $data = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
     if ($data) {
         header('Content-Type: text/csv; charset=utf-8');
-        header('Content-Disposition: attachment; filename="city_records_' . preg_replace('/\s+/', '_', $city) . '.csv"');
+        header('Content-Disposition: attachment; filename="records_' . preg_replace('/\s+/', '_', $city) . '.csv"');
 
         $output = fopen('php://output', 'w');
         fputcsv($output, array_keys($data[0]));
@@ -30,16 +45,15 @@ if (isset($_SESSION['records_verified']) && $_SESSION['records_verified'] === tr
             fputcsv($output, $row);
         }
         fclose($output);
-        exit; 
+        exit;
     }
 }
 
 include 'templates/include/header.php';
 include 'templates/include/sidebar.php';
 
-//  Password Verification
+// Password Verification
 if (isset($_POST['logout'])) {
-    //  Logout (lock again)
     unset($_SESSION['records_verified']);
     header("Location: view_records.php");
     exit;
@@ -58,29 +72,53 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['password'])) {
               </div></div>";
     }
 }
-
 if (isset($_SESSION['records_verified']) && $_SESSION['records_verified'] === true) {
     $password_verified = true;
 }
 
-//  Fetch City List
+// Fetch City + Year List
 $cities = [];
+$years = [];
+
 if ($password_verified) {
     $stmt = $pdo->query("SELECT DISTINCT city FROM uploads WHERE city IS NOT NULL AND city != '' ORDER BY city ASC");
     $cities = $stmt->fetchAll(PDO::FETCH_COLUMN);
+
+    $stmt = $pdo->query("SELECT DISTINCT YEAR(date) as year FROM uploads WHERE date IS NOT NULL ORDER BY year DESC");
+    $years = $stmt->fetchAll(PDO::FETCH_COLUMN);
 }
 
-//  Fetch Records by City
+// Fetch Records by Filters
 $records = [];
-$selected_city = '';
+$selected_city = $_POST['selected_city'] ?? '';
+$selected_month = $_POST['selected_month'] ?? '';
+$selected_year = $_POST['selected_year'] ?? '';
 $total_records = 0;
 
-if ($password_verified && isset($_POST['selected_city']) && !isset($_POST['download_csv'])) {
-    $selected_city = $_POST['selected_city'];
+if ($password_verified && !empty($selected_city) && !isset($_POST['download_csv'])) {
+    $countQuery = "SELECT COUNT(*) FROM uploads WHERE city = ?";
+    $params = [$selected_city];
 
-    // Fetch only first 10 entries for preview
-    $stmt = $pdo->prepare("SELECT * FROM uploads WHERE city = ? ORDER BY uploaded_at ASC LIMIT 10");
-    $stmt->execute([$selected_city]);
+    if (!empty($selected_month)) {
+        $query .= " AND MONTH(date) = ?";
+        $params[] = $selected_month;
+    }
+
+    if (!empty($selected_year)) {
+        $query .= " AND YEAR(date) = ?";
+        $params[] = $selected_year;
+    }
+
+    $countStmt = $pdo->prepare($countQuery);
+    $countStmt->execute($params);
+    $total_records = $countStmt->fetchColumn();
+
+   // Fetch only first 10 entries for preview
+    $query = $countQuery . " LIMIT 10";
+    $stmt = $pdo->prepare(
+        str_replace("COUNT(*)", "name, contact, city, state, date", $query)
+    );
+    $stmt->execute($params);
     $records = $stmt->fetchAll(PDO::FETCH_ASSOC);
 }
 ?>
@@ -104,7 +142,7 @@ if ($password_verified && isset($_POST['selected_city']) && !isset($_POST['downl
   </h1>
 
   <?php if (!$password_verified): ?>
-    <!--  Ask Password -->
+    <!-- Ask Password -->
     <div class="d-flex justify-content-center align-items-center" style="height:70vh;">
       <div class="card shadow p-4" style="width:400px;">
         <h5 class="text-center mb-3">🔒 Enter Password to View Records</h5>
@@ -116,7 +154,7 @@ if ($password_verified && isset($_POST['selected_city']) && !isset($_POST['downl
     </div>
 
   <?php else: ?>
-    <!--  Select City + View/Download -->
+    <!-- Filter + Records -->
     <div class="card shadow mb-4">
       <div class="card-body">
         <form method="post" class="form-inline mb-4">
@@ -129,6 +167,30 @@ if ($password_verified && isset($_POST['selected_city']) && !isset($_POST['downl
               </option>
             <?php endforeach; ?>
           </select>
+
+          <label class="mr-2 font-weight-bold">Month:</label>
+          <select name="selected_month" class="form-control mr-2">
+            <option value="">All Months</option>
+            <?php
+              $months = [
+                1 => 'January', 2 => 'February', 3 => 'March', 4 => 'April',
+                5 => 'May', 6 => 'June', 7 => 'July', 8 => 'August',
+                9 => 'September', 10 => 'October', 11 => 'November', 12 => 'December'
+              ];
+              foreach ($months as $num => $name):
+            ?>
+              <option value="<?= $num ?>" <?= ($selected_month == $num) ? 'selected' : '' ?>><?= $name ?></option>
+            <?php endforeach; ?>
+          </select>
+
+          <label class="mr-2 font-weight-bold">Year:</label>
+          <select name="selected_year" class="form-control mr-2">
+            <option value="">All Years</option>
+            <?php foreach ($years as $year): ?>
+              <option value="<?= $year ?>" <?= ($selected_year == $year) ? 'selected' : '' ?>><?= $year ?></option>
+            <?php endforeach; ?>
+          </select>
+
           <button type="submit" class="btn btn-success mr-2">Show Records</button>
 
           <?php if (!empty($selected_city)): ?>
@@ -138,7 +200,12 @@ if ($password_verified && isset($_POST['selected_city']) && !isset($_POST['downl
           <?php endif; ?>
         </form>
 
-        <!--  Display Table -->
+        <!-- Show total records -->
+        <?php if ($total_records > 0): ?>
+          <p><strong>Total Records Found:</strong> <?= $total_records ?></p>
+        <?php endif; ?>
+
+        <!-- Display Table -->
         <?php if (!empty($records)): ?>
           <div class="table-responsive">
             <table class="table table-bordered table-hover">
@@ -149,6 +216,7 @@ if ($password_verified && isset($_POST['selected_city']) && !isset($_POST['downl
                   <th>Contact</th>
                   <th>City</th>
                   <th>State</th>
+                  <th>Date</th>
                 </tr>
               </thead>
               <tbody>
@@ -159,6 +227,7 @@ if ($password_verified && isset($_POST['selected_city']) && !isset($_POST['downl
                     <td><?= htmlspecialchars($row['contact']) ?></td>
                     <td><?= htmlspecialchars($row['city']) ?></td>
                     <td><?= htmlspecialchars($row['state']) ?></td>
+                    <td><?= htmlspecialchars($row['date']) ?></td>
                   </tr>
                 <?php endforeach; ?>
               </tbody>
@@ -166,7 +235,7 @@ if ($password_verified && isset($_POST['selected_city']) && !isset($_POST['downl
           </div>
 
         <?php elseif ($selected_city): ?>
-          <p class="text-danger text-center">No records found for this city.</p>
+          <p class="text-danger text-center">No records found for this selection.</p>
         <?php endif; ?>
       </div>
     </div>
