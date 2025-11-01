@@ -42,13 +42,12 @@ if (isset($_SESSION['records_verified']) && $_SESSION['records_verified'] === tr
         $output = fopen('php://output', 'w');
         fputcsv($output, array_keys($data[0]));
         foreach ($data as $row) {
-            fputcsv($output, $row);
+           fputcsv($output, $row);
         }
         fclose($output);
         exit;
     }
 }
-
 include 'templates/include/header.php';
 include 'templates/include/sidebar.php';
 
@@ -122,7 +121,6 @@ if ($password_verified && !empty($selected_city) && !isset($_POST['download_csv'
     $records = $stmt->fetchAll(PDO::FETCH_ASSOC);
 }
 ?>
-
 <!-- MAIN PAGE CONTENT -->
 <div class="container-fluid">
   <h1 class="h3 mb-4 text-gray-800 d-flex justify-content-between align-items-center">
@@ -199,7 +197,6 @@ if ($password_verified && !empty($selected_city) && !isset($_POST['download_csv'
             </button>
           <?php endif; ?>
         </form>
-
         <!-- Show total records -->
         <?php if ($total_records > 0): ?>
           <p><strong>Total Records Found:</strong> <?= $total_records ?></p>
